@@ -208,7 +208,49 @@ thead th{
 
 .card-resumo{flex:1;}
 
-/* STATUS */
+
+.tabela-agenda{
+    width:100%;
+    table-layout:fixed;
+}
+
+.tabela-agenda th:nth-child(1),
+.tabela-agenda td:nth-child(1){
+    width:8%;
+}
+
+.tabela-agenda th:nth-child(2),
+.tabela-agenda td:nth-child(2){
+    width:7%;
+}
+
+.tabela-agenda th:nth-child(3),
+.tabela-agenda td:nth-child(3){
+    width:20%;
+}
+
+.tabela-agenda th:nth-child(4),
+.tabela-agenda td:nth-child(4){
+    width:15%;
+}
+
+.tabela-agenda th:nth-child(5),
+.tabela-agenda td:nth-child(5){
+    width:20%;
+}
+
+.tabela-agenda th:nth-child(6),
+.tabela-agenda td:nth-child(6){
+    width:20%;
+}
+
+.tabela-agenda th:nth-child(7),
+.tabela-agenda td:nth-child(7){
+    width:10%;
+    text-align:center;
+}
+
+
 /* ================= STATUS ================= */
 
 .status-livre {
@@ -368,6 +410,7 @@ const TABS = [
         id: "veiculos",
         title: "VEÍCULOS",
         sheet: "VEÍCULOS",
+        class: "tabela-veiculo",
         headers: [
             "TRAIL TXN1I89",
             "CRETA TXJ6F18",
@@ -380,6 +423,7 @@ const TABS = [
         id: "motoristas",
         title: "MOTORISTAS",
         sheet: "MOTORISTAS",
+        class: "tabela-motoristas",
         headers: [
             "CACIO / 5000366",
             "CELSO DALDEGAN / 5000205",
@@ -391,6 +435,7 @@ const TABS = [
         id: "painel",
         title: "PAINEL",
         sheet: "LANÇAMENTOS",
+        class: "tabela-painel",
         headers: [
             "Data",
             "Hora",
@@ -406,6 +451,7 @@ const TABS = [
         id: "agenda",
         title: "AGENDA DO DIA",
         sheet: "AGENDA DO DIA",
+        class: "tabela-agenda",
         headers: [
             "Data",
             "Hora",
@@ -421,6 +467,7 @@ const TABS = [
         id: "social",
         title: "AGENDA SERVIÇO SOCIAL",
         sheet: "AGENDA SERVIÇO SOCIAL",
+        class: "tabela-social",
         headers: [
             "Data",
             "Período",
@@ -828,7 +875,7 @@ function renderMotoristas(rows, painelRows, linhaFlutuante) {
 
             <tbody>
 
-                ${rows.map(row => {
+                ${displayRows.map(row => {
 
                     const values = (row.c || []).map(getCell);
 
@@ -1011,7 +1058,7 @@ painelRows.sort((a, b) => {
 
 });
 
-   // Agenda do Dia
+// Agenda do Dia
 const agendaRows =
     (results[agendaIndex].table.rows || [])
         .filter(row => {
@@ -1157,6 +1204,22 @@ if (motoristaFlutuante) {
     `;
 }
 
+
+       function criarCardTabela(tab, rows) {
+
+    return criarCard(
+        tab.title,
+        renderTable(
+            tab.headers,
+            rows,
+            tab.class
+        )
+    );
+
+}
+
+
+
     // build DOM
     function criarCard(titulo, conteudo) {
 
@@ -1188,6 +1251,13 @@ const motoristasCard = criarCard(
     )
 );
 
+const painelCard = criarCardTabela(TABS[painelIndex], painelRows);
+
+const agendaCard = criarCardTabela(TABS[agendaIndex], agendaRows);
+
+const socialCard = criarCardTabela(TABS[socialIndex], socialRows);
+
+/*
 const painelCard = criarCard(
     TABS[painelIndex].title,
     renderTable(
@@ -1211,6 +1281,7 @@ const socialCard = criarCard(
         socialRows
     )
 );
+*/
 
     // Top: Veículos + Motoristas (lado a lado)
     const resumo = document.createElement('div');
