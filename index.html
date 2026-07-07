@@ -301,16 +301,13 @@ button.off{
   color:#FFF;
 }
 
-/* ================= Adjust resumo cards: keep fixed space for 4 rows without scrollbar ================= */
-/* The rules below override .card where necessary to keep vehicles and drivers cards fixed-height */
 .resumo-grid .card{
   height: calc(var(--row-height) * 4 + 64px); /* fixed height: 4 rows + header/title/spacing */
-  overflow: hidden !important; /* hide extra rows without scrollbar */
-  display:flex !important;
-  flex-direction:column !important;
+  overflow: hidden; /* hide extra rows without scrollbar */
+  display:flex;
+  flex-direction:column;
 }
 
-/* make the table fill remaining space inside the card */
 .resumo-grid .card table{
   flex: 1 1 auto;
   display:table;
@@ -319,7 +316,11 @@ button.off{
   border-collapse:separate;
 }
 
-/* force line height to match the row-height variable */
+.resumo-grid table{
+    width:100%;
+    table-layout:fixed;
+}
+
 .resumo-grid .card tbody tr{
   height: var(--row-height);
   box-sizing: border-box;
@@ -772,8 +773,10 @@ function getDisponibilidade(nome, painelRows, tipo) {
 }
 
 function renderVeiculos(rows, painelRows){
+  
   const displayRows = (rows || []).slice(0, 4); // mostra só as primeiras 4 linhas
-  const more = (rows || []).length > 4 ? (rows.length - 4) : 0;
+  const ocultos = rows.length - displayRows.length;
+   /*const more = (rows || []).length > 4 ? (rows.length - 4) : 0;*/
 
   return `
     <table>
@@ -799,11 +802,18 @@ function renderVeiculos(rows, painelRows){
         }).join("")}
       </tbody>
     </table>
-    ${more ? `<div class="more-items">+${more} oculto(s)</div>` : ""}
-  `;
+
+    ${ocultos>0
+           ? `<div class="more-items">+${ocultos} veículo(s)</div>`
+           : ""
+        }
+    `;
 }
 
 function renderMotoristas(rows, painelRows, linhaFlutuante) {
+     
+    const displayRows = rows.slice(0,4);
+     const ocultos = rows.length-displayRows.length;
 
     return `
         <table>
@@ -851,6 +861,11 @@ function renderMotoristas(rows, painelRows, linhaFlutuante) {
             </tbody>
 
         </table>
+        ${
+            ocultos>0
+                ? `<div class="more-items">+${ocultos} motorista(s)</div>`
+                : ""
+        }
     `;
 }
 
