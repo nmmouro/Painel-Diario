@@ -208,7 +208,6 @@ thead th{
 
 .card-resumo{flex:1;}
 
-
 .tabela-painel{
     width:100%;
     table-layout:fixed;
@@ -250,7 +249,7 @@ thead th{
     text-align:center;
 }
 
-  .tabela-agenda{
+.tabela-agenda{
     width:100%;
     table-layout:fixed;
 }
@@ -272,21 +271,57 @@ thead th{
 
 .tabela-agenda th:nth-child(4),
 .tabela-agenda td:nth-child(4){
-    width:15%;
+    width:10%;
 }
 
 .tabela-agenda th:nth-child(5),
 .tabela-agenda td:nth-child(5){
-    width:20%;
+    width:22%;
 }
 
 .tabela-agenda th:nth-child(6),
 .tabela-agenda td:nth-child(6){
-    width:20%;
+    width:23%;
 }
 
 .tabela-agenda th:nth-child(7),
 .tabela-agenda td:nth-child(7){
+    width:10%;
+    text-align:center;
+}
+
+.tabela-social{
+    width:100%;
+    table-layout:fixed;
+}
+
+.tabela-social th:nth-child(1),
+.tabela-social td:nth-child(1){
+    width:8%;
+}
+
+.tabela-social th:nth-child(2),
+.tabela-social td:nth-child(2){
+    width:8%;
+}
+
+.tabela-social th:nth-child(3),
+.tabela-social td:nth-child(3){
+    width:24%;
+}
+
+.tabela-social th:nth-child(4),
+.tabela-social td:nth-child(4){
+    width:24%;
+}
+
+.tabela-social th:nth-child(5),
+.tabela-social td:nth-child(5){
+    width:26%;
+}
+
+.tabela-social th:nth-child(6),
+.tabela-social td:nth-child(6){
     width:10%;
     text-align:center;
 }
@@ -299,17 +334,17 @@ thead th{
     font-weight: 700;
 }
 
-.ocupado {
+.status-ocupado {
     color: var(--red);
     font-weight: 700;
 }
 
-.viagem {
+.status-viagem {
     color: #d66bff;
     font-weight: 700;
 }
 
-.manutencao {
+.status-manutencao {
     color: #4da6ff;
     font-weight: 700;
 }
@@ -385,7 +420,8 @@ button.off{
 }
 
 .resumo-grid .card{
-  height: calc(var(--row-height) * 4 + 64px); /* fixed height: 4 rows + header/title/spacing */
+  min-height: calc(var(--row-height) * 4 + 90px); /* fixed height: 4 rows + header/title/spacing */
+  height:auto;
   overflow: hidden; /* hide extra rows without scrollbar */
   display:flex;
   flex-direction:column;
@@ -407,6 +443,14 @@ button.off{
 .resumo-grid .card tbody tr{
   height: var(--row-height);
   box-sizing: border-box;
+}
+
+.more-items{
+    margin-top:8px;
+    text-align:center;
+    font-size:14px;
+    font-weight:700;
+    color:#9fb3ff;
 }
 
 </style>
@@ -754,16 +798,13 @@ async function fetchSheet(sheet) {
 }
 
 /* ================= TABLE RENDERS ================= */
-function renderTable(headers, rows) {
+function renderTable(headers, rows, tableClass = "") {
 
     return `
-        <table>
-
+        <table class="${tableClass}">
             <thead>
                 <tr>
-                    ${headers.map(header =>
-                        `<th>${header}</th>`
-                    ).join("")}
+                    ${headers.map(h => `<th>${h}</th>`).join("")}
                 </tr>
             </thead>
 
@@ -800,7 +841,6 @@ function renderTable(headers, rows) {
                 }).join("")}
 
             </tbody>
-
         </table>
     `;
 }
@@ -811,7 +851,19 @@ function getDisponibilidade(nome, painelRows, tipo) {
         .trim()
         .toUpperCase();
 
-    for (const row of painelRows) {
+    const registros = [...painelRows].sort((a, b) => {
+
+    const va = (a.c || []).map(getCell);
+    const vb = (b.c || []).map(getCell);
+
+    return (
+        parseDataHora(vb[0], vb[1]) -
+        parseDataHora(va[0], va[1])
+    );
+
+});
+
+    for (const row of registros) {
 
         const valores = (row.c || []).map(getCell);
 
@@ -884,7 +936,13 @@ function renderVeiculos(rows, painelRows){
               <td><strong>${v[0] || ""}</strong></td>
               <td>${getDisponibilidade(v[0], painelRows, "veiculo")}</td>
               <td>${v[2] || ""} km</td>
-              <td>⛽ ${v[3] || ""}</td>
+              <td>
+    ${
+        v[3]
+            ? `⛽ ${v[3]}`
+            : "-"
+    }
+</td>
             </tr>
           `;
         }).join("")}
@@ -982,13 +1040,49 @@ function updateClock() {
   el.textContent = `${data} — ${hora}`;
 }
 
-function toggleFull(){
-  const el = document.documentElement;
-  if(!document.fullscreenElement){
-    el.requestFullscreen?.();
-  }else{
-    document.exitFullscreen?.();
-  }
+async function toggleFull(){
+
+    try{
+
+        if(!document.fullscreenElement){
+
+            await document.documentElement
+                .requestFullscreen();
+
+        }else{
+
+            await document.exitFullscreen();
+
+        }
+
+    }catch(err){
+
+        console.error(
+            "Erro fullscreen:",
+            err
+        );
+
+    }
+}
+
+function criarLinhaFlutuante(nome, textoStatus) {
+    return `
+        <tr class="linha-flutuante">
+
+            <td>
+                <strong>${nome}</strong>
+            </td>
+
+            <td>
+                ${textoStatus}
+            </td>
+
+            <td class="usuario-nao-cadastrado">
+                ⚠️ USUÁRIO NÃO CADASTRADO
+            </td>
+
+        </tr>
+    `;
 }
 
 /* Toggle audio button */
@@ -1017,18 +1111,8 @@ async function loadAll() {
             )
         );
 
-        const hash =
-            JSON.stringify(results);
-
-        if (
-            !firstLoad &&
-            hash !== lastHash
-        ) {
-            playBeep();
-        }
-
-        firstLoad = false;
-        lastHash = hash;
+        
+       
 
         app.innerHTML = "";
 
@@ -1063,31 +1147,29 @@ async function loadAll() {
 
         // Painel
         const painelRows =
-            (results[painelIndex].table.rows || [])
-                .filter(row => {
+    (results[painelIndex].table.rows || [])
+        .filter(row => {
 
-                    const v =
-                        (row.c || [])
-                            .map(getCell);
+            const v =
+                (row.c || [])
+                    .map(getCell);
 
-                    const status =
-                        String(v[6] || "")
-                            .toUpperCase()
-                            .trim();
+            const status =
+                String(v[6] || "")
+                    .toUpperCase()
+                    .trim();
 
-                    return (
-                        status.includes("AGENDADO") ||
-                        status.includes("EM ANDAMENTO") ||
-                        status.includes("VIAGEM") ||
-                        status.includes("MANUTENÇÃO") ||
-                        status.includes("MANUTENCAO")
-                    );
+            return (
+                status.includes("AGENDADO") ||
+                status.includes("EM ANDAMENTO") ||
+                status.includes("VIAGEM") ||
+                status.includes("MANUTENÇÃO") ||
+                status.includes("MANUTENCAO")
+            );
 
-                });
+        });
 
-        
-
-painelRows.sort((a, b) => {
+        painelRows.sort((a, b) => {
 
     const va = (a.c || []).map(getCell);
     const vb = (b.c || []).map(getCell);
@@ -1098,6 +1180,30 @@ painelRows.sort((a, b) => {
     );
 
 });
+
+const hash = JSON.stringify(
+
+    painelRows.map(row =>
+
+        (row.c || []).map(getCell)
+
+    )
+
+);
+  
+if (
+    !firstLoad &&
+    hash !== lastHash
+) {
+    playBeep();
+}
+
+firstLoad = false;
+lastHash = hash;
+
+        
+
+
 
 // Agenda do Dia
 const agendaRows =
@@ -1159,7 +1265,7 @@ const motoristaFlutuante =
             (row.c || []).map(getCell);
 
         const nome =
-            String(v[2] || "").trim();
+            String(v[2] || "").trim() .toUpperCase();
 
         return !motoristasRows.some(r => {
 
@@ -1167,7 +1273,9 @@ const motoristaFlutuante =
                 String(
                     ((r.c || [])[0]?.f ??
                     (r.c || [])[0]?.v) || ""
-                ).trim();
+                )
+                .trim()
+                .toUpperCase();
 
             return (
                 motoristaCadastro === nome
@@ -1187,7 +1295,7 @@ if (motoristaFlutuante) {
             .map(getCell);
 
     const nome =
-        String(v[2] || "").trim();
+        String(v[2] || "").trim() .toUpperCase();
 
     const status =
         String(v[6] || "");
@@ -1225,28 +1333,10 @@ if (motoristaFlutuante) {
         );
 }
 
-      function criarLinhaFlutuante(nome, textoStatus) {
-    return `
-        <tr class="linha-flutuante">
-
-            <td>
-                <strong>${nome}</strong>
-            </td>
-
-            <td>
-                ${textoStatus}
-            </td>
-
-            <td class="usuario-nao-cadastrado">
-                ⚠️ USUÁRIO NÃO CADASTRADO
-            </td>
-
-        </tr>
-    `;
-}
+      
 
 
-       function criarCardTabela(tab, rows) {
+    function criarCardTabela(tab, rows) {
 
     return criarCard(
         tab.title,
@@ -1298,31 +1388,7 @@ const agendaCard = criarCardTabela(TABS[agendaIndex], agendaRows);
 
 const socialCard = criarCardTabela(TABS[socialIndex], socialRows);
 
-/*
-const painelCard = criarCard(
-    TABS[painelIndex].title,
-    renderTable(
-        TABS[painelIndex].headers,
-        painelRows
-    )
-);
 
-const agendaCard = criarCard(
-    TABS[agendaIndex].title,
-    renderTable(
-        TABS[agendaIndex].headers,
-        agendaRows
-    )
-);
-
-const socialCard = criarCard(
-    TABS[socialIndex].title,
-    renderTable(
-        TABS[socialIndex].headers,
-        socialRows
-    )
-);
-*/
 
     // Top: Veículos + Motoristas (lado a lado)
     const resumo = document.createElement('div');
